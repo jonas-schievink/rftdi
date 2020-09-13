@@ -64,10 +64,13 @@ impl CommonOpts {
 
 #[derive(StructOpt)]
 enum Opts {
+    /// Erases the EEPROM.
     Erase {
         #[structopt(flatten)]
         common: CommonOpts,
     },
+
+    /// Reads data from the EEPROM.
     Read {
         #[structopt(flatten)]
         common: CommonOpts,
@@ -84,6 +87,8 @@ enum Opts {
         #[structopt(long)]
         raw: bool,
     },
+
+    /// Writes data to the EEPROM.
     Write {
         #[structopt(flatten)]
         common: CommonOpts,
