@@ -20,9 +20,11 @@ maintenance = { status = "actively-developed" }
 
 [dependencies]
 rusb = "0.6.3"
+log = "0.4.11"
 
 [dev-dependencies]
 structopt = "0.3.17"
+env_logger = "0.7.1"
 
 # cargo-release configuration
 [package.metadata.release]

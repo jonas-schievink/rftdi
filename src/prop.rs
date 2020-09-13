@@ -8,6 +8,8 @@ pub(crate) struct DeviceProps {
     pub tx_buf: u16,
     /// RX buffer size in Bytes.
     pub rx_buf: u16,
+    /// Data Bits/Pins per port.
+    pub port_width: u8,
     /// Port properties.
     pub ports: &'static [PortProps],
 }
@@ -45,6 +47,7 @@ pub(crate) static DEVICES: &[Option<DeviceProps>] = &[
         model: "FT232AM",
         tx_buf: 128,
         rx_buf: 128,
+        port_width: 0, // UART only
         ports: DUMB_PORT,
     }),
     None, // 3.00
@@ -53,6 +56,7 @@ pub(crate) static DEVICES: &[Option<DeviceProps>] = &[
         model: "FT232BM",
         tx_buf: 128,
         rx_buf: 384,
+        port_width: 0, // UART only
         ports: DUMB_PORT,
     }),
     // 5.00
@@ -60,6 +64,7 @@ pub(crate) static DEVICES: &[Option<DeviceProps>] = &[
         model: "FT2232C/D",
         tx_buf: 128,
         rx_buf: 384,
+        port_width: 12, // xDBUS0-7, xCBUS0-3
         ports: &[PortProps {
             mpsse: MpsseSupport::Basic,
         }],
@@ -69,6 +74,7 @@ pub(crate) static DEVICES: &[Option<DeviceProps>] = &[
         model: "FT232R",
         tx_buf: 256,
         rx_buf: 128,
+        port_width: 8,
         ports: DUMB_PORT,
     }),
     // 7.00
@@ -76,6 +82,7 @@ pub(crate) static DEVICES: &[Option<DeviceProps>] = &[
         model: "FT2232H",
         tx_buf: 4096,
         rx_buf: 4096,
+        port_width: 16, // Has 2 16-bit ports.
         ports: &[
             PortProps {
                 mpsse: MpsseSupport::H,
@@ -90,6 +97,7 @@ pub(crate) static DEVICES: &[Option<DeviceProps>] = &[
         model: "FT4232H",
         tx_buf: 2048,
         rx_buf: 2048,
+        port_width: 8, // Has 4 8-bit ports.
         ports: &[
             PortProps {
                 mpsse: MpsseSupport::H,
@@ -110,6 +118,7 @@ pub(crate) static DEVICES: &[Option<DeviceProps>] = &[
         model: "FT232H",
         tx_buf: 1024,
         rx_buf: 1024,
+        port_width: 16, // Has 1 16-bit port.
         ports: &[PortProps {
             mpsse: MpsseSupport::FT232H,
         }],
@@ -119,6 +128,7 @@ pub(crate) static DEVICES: &[Option<DeviceProps>] = &[
         model: "FT-X",
         tx_buf: 512,
         rx_buf: 512,
+        port_width: 8,
         ports: DUMB_PORT,
     }),
 ];
