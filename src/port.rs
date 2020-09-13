@@ -95,6 +95,11 @@ impl Port {
         Ok(())
     }
 
+    /// Returns the number of data pins attached to this port.
+    pub fn pin_count(&self) -> u8 {
+        self.properties.port_width
+    }
+
     pub fn set_bitmode(&mut self, mode: BitMode) -> Result<()> {
         self.write_control(ControlReq::SetBitmode, (mode as u16) << 8 | 0x00, &[])?;
         Ok(())
