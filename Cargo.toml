@@ -3,19 +3,15 @@ name = "rftdi"
 version = "0.0.0"
 authors = ["Jonas Schievink <jonasschievink@gmail.com>"]
 edition = "2018"
-# TODO: Write description
-#description = ""
+description = "libusb driver for FTDI USB chips"
 documentation = "https://docs.rs/rftdi/"
 repository = "https://github.com/jonas-schievink/rftdi.git"
-# TODO: Add up to 5 keywords
-#keywords = []
-# TODO: Add categories
-#categories = []
+keywords = ["mpsse", "converter", "serial", "usart"]
+categories = ["embedded", "development-tools::debugging"]
 readme = "README.md"
 license = "0BSD"
 
 [badges]
-travis-ci = { repository = "jonas-schievink/rftdi" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
