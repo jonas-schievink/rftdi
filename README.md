@@ -26,6 +26,13 @@ rftdi = "0.0.0"
 Check the [API Documentation](https://docs.rs/rftdi/) for how to use the
 crate's functionality.
 
+### On Windows
+
+Like all devices using vendor-specific protocols, the WinUSB driver has to be
+installed before `rftdi` can use the device. To do so, you can use [Zadig].
+
+[Zadig]: https://zadig.akeo.ie/
+
 ## Rust version support
 
 This crate supports at least the 3 latest stable Rust releases. Bumping the
