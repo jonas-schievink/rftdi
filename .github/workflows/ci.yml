@@ -27,13 +27,13 @@ jobs:
           - ubuntu-latest
           - macOS-latest
           - windows-latest
-    runs-on: $
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: $
+        toolchain: ${{ matrix.rust }}
         override: true
     - name: Build
       run: cargo build --all --all-targets
@@ -49,9 +49,9 @@ jobs:
         profile: minimal
         toolchain: stable
         override: true
-        target: $
+        target: ${{ env.NO_STD_TARGET }}
     - name: Build
-      run: cargo build --verbose --no-default-features --target $
+      run: cargo build --verbose --no-default-features --target ${{ env.NO_STD_TARGET }}
 
   msrv:
     runs-on: ubuntu-latest
@@ -60,7 +60,7 @@ jobs:
     - uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: $
+        toolchain: ${{ env.MSRV }}
         override: true
     - name: Build
       run: cargo build --verbose
