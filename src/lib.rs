@@ -14,7 +14,7 @@ use prop::DeviceProps;
 use std::{cell::RefCell, cell::RefMut, fmt, rc::Rc, time::Duration};
 
 pub use error::{Error, ErrorKind};
-pub use port::Port;
+pub use port::{BitMode, Port};
 
 /// A result type with the error hardwired to [`Error`].
 ///
