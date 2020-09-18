@@ -65,9 +65,14 @@ pub(crate) static DEVICES: &[Option<DeviceProps>] = &[
         tx_buf: 128,
         rx_buf: 384,
         port_width: 12, // xDBUS0-7, xCBUS0-3
-        ports: &[PortProps {
-            mpsse: MpsseSupport::Basic,
-        }],
+        ports: &[
+            PortProps {
+                mpsse: MpsseSupport::Basic,
+            },
+            PortProps {
+                mpsse: MpsseSupport::No,
+            },
+        ],
     }),
     // 6.00
     Some(DeviceProps {
@@ -88,7 +93,7 @@ pub(crate) static DEVICES: &[Option<DeviceProps>] = &[
                 mpsse: MpsseSupport::H,
             },
             PortProps {
-                mpsse: MpsseSupport::H,
+                mpsse: MpsseSupport::No,
             },
         ],
     }),
