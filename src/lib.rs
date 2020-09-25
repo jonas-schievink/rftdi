@@ -10,11 +10,14 @@ mod port;
 mod prop;
 mod readme;
 
-use prop::DeviceProps;
-use std::{cell::RefCell, cell::RefMut, fmt, rc::Rc, time::Duration};
+use std::cell::{RefCell, RefMut};
+use std::fmt;
+use std::rc::Rc;
+use std::time::Duration;
 
 pub use error::{Error, ErrorKind};
 pub use port::{BitMode, Port};
+use prop::DeviceProps;
 
 /// A result type with the error hardwired to [`Error`].
 ///

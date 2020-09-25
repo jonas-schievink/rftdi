@@ -3,11 +3,12 @@
 //! `lib.rs` deals with general device-level configuration, while this module deals with claiming
 //! and communicating with individual ports/interfaces of a device.
 
-use std::{cell::RefMut, fmt, time::Duration};
+use std::cell::RefMut;
+use std::fmt;
+use std::time::Duration;
 
-use crate::{
-    prop::DeviceProps, ControlReq, Error, ErrorKind, Ftdi, Result, UsbHandle, REQ_READ, REQ_WRITE,
-};
+use crate::prop::DeviceProps;
+use crate::{ControlReq, Error, ErrorKind, Ftdi, Result, UsbHandle, REQ_READ, REQ_WRITE};
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 #[repr(u8)]
