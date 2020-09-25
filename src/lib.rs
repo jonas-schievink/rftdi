@@ -175,7 +175,7 @@ impl Ftdi {
             return Err(Error::from_kind(ErrorKind::UnsupportedDevice));
         }
 
-        let device = device.open().map_err(|e| {
+        let mut device = device.open().map_err(|e| {
             if cfg!(windows) && matches!(e, rusb::Error::NotSupported | rusb::Error::NotFound) {
                 // Provide a more helpful error message on non-plug-and-play platforms.
                 Error::new(
@@ -191,6 +191,8 @@ impl Ftdi {
                 Error::new(ErrorKind::Usb, e)
             }
         })?;
+
+        device.set_auto_detach_kernel_driver(true).ok();
 
         Ok(Self {
             device: Rc::new(RefCell::new(device)),
