@@ -93,7 +93,8 @@ pub(crate) static DEVICES: &[Option<DeviceProps>] = &[
                 mpsse: MpsseSupport::H,
             },
             PortProps {
-                mpsse: MpsseSupport::No,
+                // Information is a bit conflicting, but it should have 2 independent MPSSE units.
+                mpsse: MpsseSupport::H,
             },
         ],
     }),
