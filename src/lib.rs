@@ -5,6 +5,7 @@
 #![doc(test(attr(deny(unused_imports, unused_must_use))))]
 #![warn(missing_debug_implementations, rust_2018_idioms)]
 
+pub mod bitmode;
 mod error;
 mod port;
 mod prop;
@@ -16,7 +17,7 @@ use std::rc::Rc;
 use std::time::Duration;
 
 pub use error::{Error, ErrorKind};
-pub use port::{BitMode, Port};
+pub use port::Port;
 use prop::DeviceProps;
 
 /// A result type with the error hardwired to [`Error`].

@@ -3,36 +3,38 @@
 //! `lib.rs` deals with general device-level configuration, while this module deals with claiming
 //! and communicating with individual ports/interfaces of a device.
 
+use std::any::type_name;
 use std::cell::RefMut;
 use std::fmt;
+use std::marker::PhantomData;
 use std::time::Duration;
 
+use crate::bitmode::{self, AnyBitMode, BitMode};
 use crate::prop::DeviceProps;
 use crate::{ControlReq, Error, ErrorKind, Ftdi, Result, UsbHandle, REQ_READ, REQ_WRITE};
 
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
-#[repr(u8)]
-pub enum BitMode {
-    Reset = 0x00,
-    Bitbang = 0x01,
-    Mpsse = 0x02,
-    Syncbb = 0x04,
-    Mcu = 0x08,
-    Opto = 0x10,
-    Cbus = 0x20,
-    Syncff = 0x40,
+// FIXME: Hack needed since you can't move out of types that impl `Drop`.
+struct ReleaseOnDrop {
+    /// Port/Interface index (0-based).
+    index: u8,
+    device: UsbHandle,
+}
+
+impl Drop for ReleaseOnDrop {
+    fn drop(&mut self) {
+        self.device.borrow_mut().release_interface(self.index).ok();
+    }
 }
 
 /// A claimed port on an FTDI device.
 ///
 /// Devices may have anywhere between 1 to 4 ports that can be individually claimed by different
 /// applications. A port maps to a USB Interface.
-pub struct Port {
-    device: UsbHandle,
+pub struct Port<M: AnyBitMode = bitmode::Serial> {
+    device: ReleaseOnDrop,
     timeout: Duration,
-    /// Port/Interface index (0-based).
-    index: u8,
     properties: &'static DeviceProps,
+    _p: PhantomData<M>,
 }
 
 impl Port {
@@ -42,19 +44,24 @@ impl Port {
         drop(dev);
 
         let mut this = Self {
-            device: parent.device.clone(),
+            device: ReleaseOnDrop {
+                device: parent.device.clone(),
+                index,
+            },
             timeout: parent.timeout,
-            index,
             properties: parent.properties,
+            _p: PhantomData,
         };
 
-        this.set_bitmode(BitMode::Reset)?;
+        this.set_bitmode(BitMode::Serial)?;
 
         Ok(this)
     }
+}
 
+impl<M: AnyBitMode> Port<M> {
     fn dev(&self) -> RefMut<'_, rusb::DeviceHandle<rusb::GlobalContext>> {
-        self.device.borrow_mut()
+        self.device.device.borrow_mut()
     }
 
     fn read_control<'b>(&self, request: ControlReq, value: u16, buf: &'b mut [u8]) -> Result<()> {
@@ -64,7 +71,7 @@ impl Port {
                 REQ_READ,
                 request as u8,
                 value,
-                u16::from(self.index) + 1, // bInterfaceNumber + 1
+                u16::from(self.device.index) + 1, // bInterfaceNumber + 1
                 buf,
                 self.timeout,
             )
@@ -83,7 +90,7 @@ impl Port {
                 REQ_WRITE,
                 request as u8,
                 value,
-                u16::from(self.index) + 1, // bInterfaceNumber + 1
+                u16::from(self.device.index) + 1, // bInterfaceNumber + 1
                 buf,
                 self.timeout,
             )
@@ -96,14 +103,32 @@ impl Port {
         Ok(())
     }
 
+    fn set_bitmode(&mut self, mode: BitMode) -> Result<()> {
+        self.write_control(ControlReq::SetBitmode, (mode as u16) << 8 | 0x00, &[])?;
+        Ok(())
+    }
+
+    /// Switches the port to mode `T`.
+    ///
+    /// This consumes the port and returns a new instance with mode parameter `T`.
+    pub fn into_mode<T: AnyBitMode>(mut self) -> Result<Port<T>> {
+        self.set_bitmode(T::MODE)?;
+        Ok(Port {
+            device: self.device,
+            timeout: self.timeout,
+            properties: self.properties,
+            _p: PhantomData,
+        })
+    }
+
+    /// Returns this Port's 0-based index.
+    pub fn index(&self) -> u8 {
+        self.device.index
+    }
+
     /// Returns the number of data pins attached to this port.
     pub fn pin_count(&self) -> u8 {
         self.properties.port_width
-    }
-
-    pub fn set_bitmode(&mut self, mode: BitMode) -> Result<()> {
-        self.write_control(ControlReq::SetBitmode, (mode as u16) << 8 | 0x00, &[])?;
-        Ok(())
     }
 
     /// Polls the current status of the lower 8 I/O pins.
@@ -118,16 +143,13 @@ impl Port {
     }
 }
 
-impl Drop for Port {
-    fn drop(&mut self) {
-        self.dev().release_interface(self.index).ok();
-    }
-}
-
-impl fmt::Debug for Port {
+impl<M: AnyBitMode> fmt::Debug for Port<M> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Port")
-            .field("index", &self.index)
+        let mode = type_name::<M>();
+        let mode = mode.rsplit("::").next().unwrap();
+
+        f.debug_struct(&format!("Port<{}>", mode))
+            .field("index", &self.index())
             .field("timeout", &self.timeout)
             .finish()
     }

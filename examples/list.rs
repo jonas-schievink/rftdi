@@ -40,8 +40,9 @@ fn dump_device(device: &Ftdi) -> Result<()> {
     );
 
     for port_num in 0..device.num_ports() {
-        println!("  Port {}:", port_num);
+        print!("  Port {}:", port_num);
         let port = device.open_port(port_num)?;
+        println!(" {:?}", port);
         println!("    Pin state: 0b{:08b}", port.read_pins()?);
     }
 
