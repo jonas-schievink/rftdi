@@ -9,9 +9,19 @@ use std::fmt;
 use std::marker::PhantomData;
 use std::time::Duration;
 
+use bitflags::bitflags;
+
 use crate::bitmode::{self, AnyBitMode, BitMode};
 use crate::prop::DeviceProps;
-use crate::{ControlReq, Error, ErrorKind, Ftdi, Result, UsbHandle, REQ_READ, REQ_WRITE};
+use crate::{ControlReq, Error, Ftdi, Result, UsbHandle, REQ_READ, REQ_WRITE};
+
+bitflags! {
+    pub struct ResetFlags: u16 {
+        const PURGE_RX = 1;
+        const PURGE_TX = 2;
+        const PURGE_RX_TX = 1 | 2;
+    }
+}
 
 // FIXME: Hack needed since you can't move out of types that impl `Drop`.
 struct ReleaseOnDrop {
@@ -53,6 +63,7 @@ impl Port {
             _p: PhantomData,
         };
 
+        this.reset(ResetFlags::PURGE_RX_TX)?;
         this.set_bitmode(BitMode::Serial)?;
 
         Ok(this)
@@ -60,11 +71,16 @@ impl Port {
 }
 
 impl<M: AnyBitMode> Port<M> {
-    fn dev(&self) -> RefMut<'_, rusb::DeviceHandle<rusb::GlobalContext>> {
+    pub(crate) fn dev(&self) -> RefMut<'_, rusb::DeviceHandle<rusb::GlobalContext>> {
         self.device.device.borrow_mut()
     }
 
-    fn read_control<'b>(&self, request: ControlReq, value: u16, buf: &'b mut [u8]) -> Result<()> {
+    pub(crate) fn read_control<'b>(
+        &self,
+        request: ControlReq,
+        value: u16,
+        buf: &'b mut [u8],
+    ) -> Result<()> {
         let n = self
             .dev()
             .read_control(
@@ -77,13 +93,16 @@ impl<M: AnyBitMode> Port<M> {
             )
             .map_err(Error::usb)?;
         if n != buf.len() {
-            log::error!("read_control: read {} bytes, expected {}", n, buf.len());
-            return Err(Error::from_kind(ErrorKind::Other));
+            return Err(Error::other(format!(
+                "read {} bytes, expected {}",
+                n,
+                buf.len()
+            )));
         }
         Ok(())
     }
 
-    fn write_control(&self, request: ControlReq, value: u16, buf: &[u8]) -> Result<()> {
+    pub(crate) fn write_control(&self, request: ControlReq, value: u16, buf: &[u8]) -> Result<()> {
         let n = self
             .dev()
             .write_control(
@@ -96,8 +115,11 @@ impl<M: AnyBitMode> Port<M> {
             )
             .map_err(Error::usb)?;
         if n != buf.len() {
-            log::error!("write_control: wrote {} bytes, expected {}", n, buf.len());
-            return Err(Error::from_kind(ErrorKind::Other));
+            return Err(Error::other(format!(
+                "wrote {} bytes, expected {}",
+                n,
+                buf.len()
+            )));
         }
 
         Ok(())
@@ -129,6 +151,13 @@ impl<M: AnyBitMode> Port<M> {
     /// Returns the number of data pins attached to this port.
     pub fn pin_count(&self) -> u8 {
         self.properties.port_width
+    }
+
+    /// Resets the port, optionally purging the RX and/or TX buffer.
+    ///
+    /// Note that this will not reset all internal state.
+    pub fn reset(&mut self, flags: ResetFlags) -> Result<()> {
+        self.write_control(ControlReq::Reset, flags.bits(), &[])
     }
 
     /// Polls the current status of the lower 8 I/O pins.

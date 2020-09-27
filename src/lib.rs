@@ -10,15 +10,18 @@ mod error;
 mod port;
 mod prop;
 mod readme;
+mod serial;
 
 use std::cell::{RefCell, RefMut};
 use std::fmt;
 use std::rc::Rc;
 use std::time::Duration;
 
+use prop::DeviceProps;
+
 pub use error::{Error, ErrorKind};
 pub use port::Port;
-use prop::DeviceProps;
+pub use serial::{FlowControl, ModemStatus, Parity, StopBits};
 
 /// A result type with the error hardwired to [`Error`].
 ///

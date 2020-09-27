@@ -20,7 +20,7 @@ fn run() -> Result<()> {
         match device.and_then(|device| dump_device(&device)) {
             Ok(()) => {}
             Err(err) => {
-                eprintln!("{}", err);
+                eprintln!("error: {}", err);
             }
         }
     }
@@ -41,9 +41,15 @@ fn dump_device(device: &Ftdi) -> Result<()> {
 
     for port_num in 0..device.num_ports() {
         print!("  Port {}:", port_num);
-        let port = device.open_port(port_num)?;
+        let mut port = device.open_port(port_num)?;
+        port.set_dtr(false)?;
+        port.set_rts(false)?;
         println!(" {:?}", port);
-        println!("    Pin state: 0b{:08b}", port.read_pins()?);
+        println!("    Pins:     0b{:08b}", port.read_pins()?);
+        println!("    Status: {:?}", port.poll_modem_status()?);
+        port.set_dtr(true)?;
+        port.set_rts(true)?;
+        println!("    +DTR/RTS: 0b{:08b}", port.read_pins()?);
     }
 
     Ok(())

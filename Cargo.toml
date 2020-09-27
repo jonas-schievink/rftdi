@@ -17,6 +17,7 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 rusb = "0.6.3"
 log = "0.4.11"
+bitflags = "1.2.1"
 
 [dev-dependencies]
 structopt = "0.3.17"

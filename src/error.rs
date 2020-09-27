@@ -55,6 +55,13 @@ impl Error {
         Self { kind, inner: None }
     }
 
+    pub(crate) fn other(msg: impl Into<Box<dyn error::Error + Send + Sync>>) -> Self {
+        Self {
+            kind: ErrorKind::Other,
+            inner: Some(msg.into()),
+        }
+    }
+
     /// Returns the `ErrorKind` most closely describing this error.
     pub fn kind(&self) -> ErrorKind {
         self.kind
