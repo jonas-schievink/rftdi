@@ -38,6 +38,12 @@ pub enum FlowControl {
     XonXoff,
 }
 
+impl Default for FlowControl {
+    fn default() -> Self {
+        FlowControl::Disabled
+    }
+}
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Parity {
     None = 0x00,
