@@ -43,12 +43,16 @@ impl Drop for ReleaseOnDrop {
 pub struct Port<M: AnyBitMode = bitmode::Serial> {
     device: ReleaseOnDrop,
     timeout: Duration,
+    /// Bulk IN endpoint address.
+    ep_in: u8,
+    /// Bulk OUT endpoint address.
+    ep_out: u8,
     properties: &'static DeviceProps,
     _p: PhantomData<M>,
 }
 
 impl Port {
-    pub(crate) fn open(parent: &Ftdi, index: u8) -> Result<Self> {
+    pub(crate) fn open(parent: &Ftdi, index: u8, ep_in: u8, ep_out: u8) -> Result<Self> {
         let mut dev = parent.dev();
         dev.claim_interface(index).map_err(Error::usb)?;
         drop(dev);
@@ -59,6 +63,8 @@ impl Port {
                 index,
             },
             timeout: parent.timeout,
+            ep_in,
+            ep_out,
             properties: parent.properties,
             _p: PhantomData,
         };
@@ -139,6 +145,8 @@ impl<M: AnyBitMode> Port<M> {
             device: self.device,
             timeout: self.timeout,
             properties: self.properties,
+            ep_in: self.ep_in,
+            ep_out: self.ep_out,
             _p: PhantomData,
         })
     }

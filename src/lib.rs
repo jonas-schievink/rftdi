@@ -57,13 +57,6 @@ enum ControlReq {
     EraseEeprom = 0x92,
 }
 
-/// An FTDI USB device.
-pub struct Ftdi {
-    device: UsbHandle,
-    timeout: Duration,
-    properties: &'static DeviceProps,
-}
-
 const REQ_TYPE_VENDOR: u8 = 0x02 << 5;
 const REQ_RECIPIENT_DEVICE: u8 = 0x00;
 const REQ_DIR_OUT: u8 = 0x00;
@@ -71,6 +64,14 @@ const REQ_DIR_IN: u8 = 0x80;
 
 const REQ_READ: u8 = REQ_TYPE_VENDOR | REQ_RECIPIENT_DEVICE | REQ_DIR_IN;
 const REQ_WRITE: u8 = REQ_TYPE_VENDOR | REQ_RECIPIENT_DEVICE | REQ_DIR_OUT;
+
+/// An FTDI USB device.
+pub struct Ftdi {
+    device: UsbHandle,
+    timeout: Duration,
+    port_eps: [(u8, u8); 4],
+    properties: &'static DeviceProps,
+}
 
 impl Ftdi {
     const DEFAULT_TIMEOUT: Duration = Duration::from_millis(500);
@@ -142,12 +143,40 @@ impl Ftdi {
         let conf_descr = device.active_config_descriptor().map_err(Error::usb)?;
 
         // Every interface must have vendor descriptors and a pair of bulk endpoints.
-        for intf in conf_descr.interfaces() {
+        let mut port_eps = [(0, 0); 4];
+        for (intf_index, intf) in conf_descr.interfaces().enumerate() {
             let mut iter = intf.descriptors();
             let descr = iter.next();
 
             match descr {
-                Some(descr) => if descr.num_endpoints() != 2 {},
+                Some(descr) => {
+                    if descr.num_endpoints() == 2 {
+                        let (mut ep_in, mut ep_out) = (None, None);
+
+                        for ep in descr.endpoint_descriptors() {
+                            match ep.direction() {
+                                rusb::Direction::In => ep_in = Some(ep.address()),
+                                rusb::Direction::Out => ep_out = Some(ep.address()),
+                            }
+                        }
+
+                        match (ep_in, ep_out) {
+                            (Some(ep_in), Some(ep_out)) => {
+                                port_eps[intf_index] = (ep_in, ep_out);
+                            }
+                            _ => {
+                                log::error!("interface has invalid endpoint configuration");
+                                return Err(Error::from_kind(ErrorKind::UnsupportedDevice));
+                            }
+                        }
+                    } else {
+                        log::error!(
+                            "interface has {} endpoints, expected 2",
+                            descr.num_endpoints()
+                        );
+                        return Err(Error::from_kind(ErrorKind::UnsupportedDevice));
+                    }
+                }
                 None => {
                     log::error!("missing interface descriptor");
                     return Err(Error::from_kind(ErrorKind::UnsupportedDevice));
@@ -201,6 +230,7 @@ impl Ftdi {
         Ok(Self {
             device: Rc::new(RefCell::new(device)),
             properties,
+            port_eps,
             timeout: Self::DEFAULT_TIMEOUT,
         })
     }
@@ -373,7 +403,8 @@ impl Ftdi {
             self.num_ports()
         );
 
-        Port::open(self, port)
+        let (ep_in, ep_out) = self.port_eps[usize::from(port)];
+        Port::open(self, port, ep_in, ep_out)
     }
 }
 
