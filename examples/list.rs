@@ -46,7 +46,8 @@ fn dump_device(device: &Ftdi) -> Result<()> {
         port.set_rts(false)?;
         println!(" {:?}", port);
         println!("    Pins:     0b{:08b}", port.read_pins()?);
-        println!("    Status: {:?}", port.poll_modem_status()?);
+        println!("    Status:   {:?}", port.poll_modem_status()?);
+        println!("    Latency:  {} ms", port.read_latency_timer()?);
         port.set_dtr(true)?;
         port.set_rts(true)?;
         println!("    +DTR/RTS: 0b{:08b}", port.read_pins()?);
