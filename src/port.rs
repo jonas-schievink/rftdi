@@ -70,6 +70,8 @@ impl Port {
         };
 
         this.reset(ResetFlags::PURGE_RX_TX)?;
+        // FIXME: `reset` does not reset most state, we should probably configure some reasonable
+        // defaults here.
         this.set_bitmode(BitMode::Serial)?;
 
         Ok(this)
